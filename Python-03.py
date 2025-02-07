@@ -56,7 +56,7 @@ print(list1)
 print(" ")
 
 #Tuples in python
-tup = (68, 87, 68, 56, 45)                        #it can be filled wiht words also ( with strings )
+tup = (68, 87, 68, 56, 45)                    #it can be filled wiht words also ( with strings )
 print(tup)
 print(type(tup))                              #tuples
 print(tup[2])                                 #68

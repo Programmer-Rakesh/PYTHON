@@ -1,0 +1,71 @@
+# Updated Arduino Code for Face Tracking + Ultrasonic Radar
+#include <Servo.h>
+
+Servo horizontalServo; // Horizontal Servo for both Face Tracking & Radar
+Servo verticalServo;   // Vertical Servo for Face Tracking
+
+const int trigPin = 6;
+const int echoPin = 7;
+const int horizontalServoPin = 9;
+const int verticalServoPin = 10;
+
+long duration;
+int distance;
+bool faceDetected = false;
+unsigned long faceTrackingStart = 0;
+const int faceTrackingTimeout = 6000; // 6 seconds timeout
+
+void setup() {
+    Serial.begin(9600);
+    horizontalServo.attach(horizontalServoPin);
+    verticalServo.attach(verticalServoPin);
+    pinMode(trigPin, OUTPUT);
+    pinMode(echoPin, INPUT);
+    horizontalServo.write(90); // Start at center position
+}
+
+void loop() {
+    if (Serial.available()) {
+        String command = Serial.readStringUntil('\n');
+        command.trim();
+        if (command == "FACE_TRACKING") {
+            faceDetected = true;
+            faceTrackingStart = millis();
+        } else if (command == "RADAR") {
+            faceDetected = false;
+        }
+    }
+
+    if (faceDetected) {
+        if (millis() - faceTrackingStart > faceTrackingTimeout) {
+            faceDetected = false; // Resume radar scanning after timeout
+        }
+    } else {
+        // Radar Mode: Scan 180 degrees
+        for (int angle = 0; angle <= 180; angle += 5) {
+            horizontalServo.write(angle);
+            delay(50);
+            distance = measureDistance();
+            if (distance > 0 && distance < 30) { // If object detected
+                Serial.println("Obstacle detected, switching to face tracking");
+                Serial.println("START_FACE_TRACKING"); // Notify Python
+                faceDetected = true;
+                faceTrackingStart = millis();
+                break;
+            }
+        }
+    }
+}
+
+int measureDistance() {
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+    duration = pulseIn(echoPin, HIGH);
+    return duration * 0.034 / 2; // Convert to cm
+}
+
+
+

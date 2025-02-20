@@ -1,0 +1,41 @@
+#define ENA 11  // Motor speed control (PWM)
+#define IN1 9   // Motor direction
+#define IN2 10  // Motor direction
+
+float distance = 0;  // Store received distance
+
+void setup() {
+    Serial.begin(9600);
+    pinMode(ENA, OUTPUT);
+    pinMode(IN1, OUTPUT);
+    pinMode(IN2, OUTPUT);
+    stopMotor();  // Ensure motor starts in STOP state
+}
+
+void loop() {
+    if (Serial.available() > 0) {
+        distance = Serial.parseFloat();  // Read the distance from Python
+        Serial.print("Received Distance: ");
+        Serial.println(distance);
+
+        if (distance > 30) {  // ✅ Changed threshold from 60 cm to 30 cm
+            runMotor(150);  // Run motor at PWM speed 150
+        } else {
+            stopMotor();  // Stop motor if distance is 30 cm or less
+        }
+    }
+}
+
+void runMotor(int speed) {
+    digitalWrite(IN1, HIGH);
+    digitalWrite(IN2, LOW);
+    analogWrite(ENA, speed);
+    Serial.println("Motor Running...");
+}
+
+void stopMotor() {
+    digitalWrite(IN1, LOW);
+    digitalWrite(IN2, LOW);
+    analogWrite(ENA, 0);
+    Serial.println("Motor Stopped...");
+}

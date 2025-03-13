@@ -15,8 +15,9 @@ cv2.rectangle(img, (200, 350), (450, 600), (0, 0, 255), 10)  # if we put -1 inst
 cv2.circle(img, (500, 550), 150, (255, 0, 0), 10)
 
 # text
-cv2.putText(img, 'Hey you!', (800, 450), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 0), 2)
+# cv2.putText(img, 'Hey you!', (800, 450), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 0), 2)
 
+cv2.putText(img, 'Hey you!', (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
 
 cv2.imshow('img', img)
 cv2.waitKey(0)

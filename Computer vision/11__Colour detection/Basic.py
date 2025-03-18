@@ -1,6 +1,6 @@
-
 import cv2
 import numpy as np
+from PIL import Image
 from util import get_limits
 
 yellow = np.array([0, 255, 255])
@@ -23,6 +23,10 @@ while True:
     cv2.imshow('Original', frame)
 
     mask = cv2.inRange(hsvImage, lowerLimit, upperLimit)
+
+    mask_ = Image.fromarray(mask)
+
+    bbox = mask_.getbbox()
 
     cv2.imshow('frame', mask)
 

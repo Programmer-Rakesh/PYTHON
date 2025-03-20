@@ -27,8 +27,15 @@ while True:
     mask_ = Image.fromarray(mask)
 
     bbox = mask_.getbbox()
+    if bbox is not None:
+        x1, y1, x2, y2 = bbox
 
-    cv2.imshow('frame', mask)
+        frame = cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 225, 0), 5)
+
+    # print(bbox)
+
+    cv2.imshow('Yellow', frame)
+    cv2.imshow('Black', mask)
 
     if cv2.waitKey(10) & 0xFF == ord('q'):
         break

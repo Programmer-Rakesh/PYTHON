@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 def calc_diff(im1, im2):
     return  np.abs(np.mean(im1) - np.mean(im2))
 
-mask = r'C:\Users\Rakesh\OneDrive\Desktop\Codes\Python\Yolov8 models\02__Car Parking Detection\Media\mask_1920_1080.png'
-video_path = r'C:\Users\Rakesh\OneDrive\Desktop\Codes\Python\Yolov8 models\02__Car Parking Detection\Media\parking_1920_1080_loop.mp4'
+mask = r'C:\Users\Rakesh\OneDrive\Desktop\Codes\Python\Yolov8 models\03__Security\Media\mask.jpg'
+video_path = r'C:\Users\Rakesh\OneDrive\Desktop\Codes\Python\Yolov8 models\03__Security\Media\vid.mp4'
 
 
 mask = cv2.imread(mask, 0)
@@ -58,15 +58,26 @@ while ret:
         spot_status = spots_status[spot_index]
         x1, y1, w, h = spots[spot_index]
         if spot_status:
-            frame = cv2.rectangle(frame, (x1, y1), (x1 + w, y1 + h), (0, 255, 0), 2)
+            # frame = cv2.rectangle(frame, (x1, y1), (x1 + w, y1 + h), (0, 255, 0), 2)
+            overlay = frame.copy()
+            cv2.rectangle(overlay, (x1, y1), (x1 + w, y1 + h), (0, 0, 255), -1)
+            alpha = 0.4  # Change this value (0.0 to 1.0) for opacity control
+            frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
         else:
-            frame = cv2.rectangle(frame, (x1, y1), (x1 + w, y1 + h), (0, 0, 255), 2)
+            # frame = cv2.rectangle(frame, (x1, y1), (x1 + w, y1 + h), (0, 0, 255), -1)
+            overlay = frame.copy()
+            cv2.rectangle(overlay, (x1, y1), (x1 + w, y1 + h), (0, 255, 0), -1)
+            alpha = 0.4  # Change this value (0.0 to 1.0) for opacity control
+            frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
 
-    cv2.rectangle(frame, (80, 20), (550, 80), (0, 0, 0), -1)
-    cv2.putText(frame, 'Available spots: {} / {}'.format(str(sum(spots_status)), str(len(spots_status))), (100, 60),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
+
+    # cv2.rectangle(frame, (80, 20), (550, 80), (0, 0, 0), -1)
+    # cv2.putText(frame, 'Available spots: {} / {}'.format(str(sum(spots_status)), str(len(spots_status))), (100, 60),
+    #             cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
     cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
+    cv2.resizeWindow('frame', 800, 900)
     cv2.imshow('frame', frame)
     if cv2.waitKey(25) & 0xFF == ord('q'):
         break

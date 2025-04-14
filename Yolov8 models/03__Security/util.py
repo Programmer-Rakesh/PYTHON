@@ -8,7 +8,7 @@ import cv2
 EMPTY = True
 NOT_EMPTY = False
 
-MODEL = pickle.load(open(r"C:\Users\Rakesh\OneDrive\Desktop\Codes\Python\Yolov8 models\02__Car Parking Detection\model.p", "rb"))
+MODEL = pickle.load(open(r"C:\Users\Rakesh\OneDrive\Desktop\Codes\Python\Yolov8 models\03__Security\model.p", "rb"))
 
 
 def empty_or_not(spot_bgr):

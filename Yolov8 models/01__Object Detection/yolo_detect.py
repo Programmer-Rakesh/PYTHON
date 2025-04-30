@@ -5,10 +5,10 @@ import  cv2
 model = YOLO('yolov8n.pt')
 
 # load value
-# video_path = r'C:\Users\Rakesh\OneDrive\Desktop\Codes\Python\Yolov8 Models\01__Object Tracking\Dog.mp4'
-# cap = cv2.VideoCapture(video_path)
+video_path = r'C:\Users\Rakesh\OneDrive\Desktop\Codes\Python\Yolov8 models\01__Object Detection\darjeling.mp4'
+cap = cv2.VideoCapture(video_path)
 
-cap = cv2.VideoCapture(0)
+# cap = cv2.VideoCapture(0)
 
 # read frame
 while True:
@@ -23,7 +23,7 @@ while True:
 # plot results
     frame_ = results[0].plot()
 
-    frame_resized = cv2.resize(frame_, (800, 720))
+    frame_resized = cv2.resize(frame_, (500, 780))
 
 #visualize
     cv2.imshow('frame', frame_resized)

@@ -5,10 +5,10 @@
 # model = YOLO('yolov8n.pt')
 
 # # load value
-# video_path = r'C:\Users\Rakesh\OneDrive\Desktop\Codes\Python\Yolov8 models\01__Object Detection\darjeling.mp4'
-# cap = cv2.VideoCapture(video_path)
+# # video_path = r'C:\Users\Rakesh\OneDrive\Desktop\Codes\Python\Yolov8 models\01__Object Detection\darjeling.mp4'
+# # cap = cv2.VideoCapture(video_path)
 
-# # cap = cv2.VideoCapture(0)
+# cap = cv2.VideoCapture(0)
 
 # # read frame
 # while True:
@@ -32,6 +32,9 @@
 
 # cap.release()
 # cv2.destroyAllWindows()
+
+
+
 
 
 from ultralytics import YOLO

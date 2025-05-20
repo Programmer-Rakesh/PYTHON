@@ -72,11 +72,24 @@ while ret:
             (cx - diamond_size, cy)
         ], np.int32)], isClosed=True, color=bright_green, thickness=2)
 
-        # Display information
+        # top left
         cv2.putText(frame, f"Target: {class_name}", (10, 30), font, 0.6, bright_green, 2)
         cv2.putText(frame, f"Count: {count}", (10, 55), font, 0.6, bright_green, 2)
         cv2.putText(frame, f"Tracker XY: {cx}, {cy}", (10, 80), font, 0.6, bright_green, 2)
-        cv2.putText(frame, f"FPS: {int(fps)}", (10, 105), font, 0.6, bright_green, 2)
+        
+
+        # --- Top Right Info (Real-time and Altitude) ---
+        current_time = time.strftime("%H:%M:%S", time.localtime())
+        altitude = "345m"  # Placeholder for altitude
+        cv2.putText(frame, f"Time: {current_time}", (w - 200, 30), font, 0.6, bright_green, 2)
+        cv2.putText(frame, f"Altitude: {altitude}", (w - 200, 55), font, 0.6, bright_green, 2)
+        cv2.putText(frame, f"FPS: {int(fps)}", (w - 200, 80), font, 0.6, bright_green, 2)
+
+        # --- Bottom Left Info: Distance from sniper to target ---
+        distance = int(np.linalg.norm([cx - center_x, cy - center_y]))
+        cv2.line(frame, (center_x, center_y), (cx, cy), (0, 0, 255), 2)  # Red line
+        cv2.putText(frame, f"Distance: {distance}px", (10, h - 20), font, 0.6, (0, 0, 255), 2)
+
 
     # Improved sniper crosshair at center
     dot_radius = 4

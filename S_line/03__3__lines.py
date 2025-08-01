@@ -71,10 +71,6 @@ face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fronta
 # Open webcam
 cap = cv2.VideoCapture(0)
 
-# Get screen resolution
-screen_width = 1920  # You can also use pyautogui.size() if needed
-screen_height = 1080
-
 def draw_semicircle(frame, pt1, pt2, color, thickness=2):
     mid_x = (pt1[0] + pt2[0]) // 2
     mid_y = min(pt1[1], pt2[1]) - 100
@@ -86,17 +82,12 @@ def draw_semicircle(frame, pt1, pt2, color, thickness=2):
     for i in range(len(curve) - 1):
         cv2.line(frame, curve[i], curve[i + 1], color, thickness)
 
-# Make window fullscreen
-cv2.namedWindow("Face Connection Tracker", cv2.WND_PROP_FULLSCREEN)
-cv2.setWindowProperty("Face Connection Tracker", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-
 while True:
     ret, frame = cap.read()
     if not ret:
         break
 
     frame = cv2.flip(frame, 1)
-    frame = cv2.resize(frame, (screen_width, screen_height))  # Resize to full screen
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     faces = face_cascade.detectMultiScale(gray, 1.1, 5)
@@ -108,16 +99,15 @@ while True:
 
     if len(face_tops) == 1:
         pt = face_tops[0]
-        # Straight up
+        
+        # Middle line (straight)
         cv2.line(frame, pt, (pt[0], 0), (0, 0, 255), 2)
 
-        # Left arc
-        left_target = (pt[0] - 70, 0)
-        draw_semicircle(frame, pt, left_target, (0, 0, 255), 2)
-
-        # Right arc
-        right_target = (pt[0] + 70, 0)
-        draw_semicircle(frame, pt, right_target, (0, 0, 255), 2)
+        # Left and Right arced lines
+        offsets = [-120, -60, 60, 120]
+        for offset in offsets:
+            target = (pt[0] + offset, 0)
+            draw_semicircle(frame, pt, target, (0, 0, 255), 2)
 
     elif len(face_tops) > 1:
         for i in range(len(face_tops)):
@@ -131,3 +121,4 @@ while True:
 
 cap.release()
 cv2.destroyAllWindows()
+

@@ -7,8 +7,21 @@ from ultralytics import YOLO
 model = YOLO('yolov8s.pt')
 
 # Load video
-video_path = r'C:\Users\Rakesh\OneDrive\Desktop\Codes\Python\Sucide_drone_vision\car1.mp4'
+# video_path = r'C:\Users\Rakesh\OneDrive\Desktop\Codes\Python\Sucide_drone_vision\car1.mp4'
+# cap = cv2.VideoCapture(video_path)
+
+video_path = r"C:\Users\rakes\OneDrive\Desktop\Codes\Python\Sucide_drone_vision\car1.mp4"
+print("USING VIDEO:", video_path)
+
 cap = cv2.VideoCapture(video_path)
+ret, frame = cap.read()
+print("Read first frame:", ret)
+
+if not ret:
+    print("FAILED TO READ FRAME. Video path might be wrong inside the script.")
+    exit()
+
+
 
 # Constants
 TARGET_CLASS = 'car'
@@ -18,10 +31,26 @@ font = cv2.FONT_HERSHEY_SIMPLEX
 bright_green = (0, 255, 0)
 
 # Frame details
+# ret, frame = cap.read()
+# h, w = frame.shape[:2]
+
+# First read
 ret, frame = cap.read()
+
+if not ret or frame is None:
+    print("ERROR: Could not read the first frame. Check the video.")
+    exit()
+
 h, w = frame.shape[:2]
 center_x, center_y = w // 2, h // 2
-ret = True
+frame_count = 0
+start_time = time.time()
+
+
+h, w = frame.shape[:2]
+
+center_x, center_y = w // 2, h // 2
+# ret = True
 frame_count = 0
 start_time = time.time()
 
@@ -179,3 +208,6 @@ while ret:
 
 cap.release()
 cv2.destroyAllWindows()
+
+
+

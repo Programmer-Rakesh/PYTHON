@@ -1,3 +1,5 @@
+##ploted for college work!
+
 import matplotlib.pyplot as plt
 import numpy as np
 

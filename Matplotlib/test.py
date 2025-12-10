@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+=======
+##ploted for college work!
+
+>>>>>>> db51aaf8300d24d7f8061f746ce5732746ca5880
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -20,6 +25,13 @@ plt.ylabel("IF", fontsize=20,
                     family="Arial",
                     fontweight="bold")
 
+<<<<<<< HEAD
+=======
+
+
+
+
+>>>>>>> db51aaf8300d24d7f8061f746ce5732746ca5880
 plt.plot(x, y)
 plt.plot(x1, y1)
 

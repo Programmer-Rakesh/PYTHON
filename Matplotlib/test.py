@@ -20,10 +20,6 @@ plt.ylabel("IF", fontsize=20,
                     family="Arial",
                     fontweight="bold")
 
-
-
-
-
 plt.plot(x, y)
 plt.plot(x1, y1)
 

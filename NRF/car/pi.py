@@ -40,6 +40,9 @@ try:
         elif key == ' ':
             x = 0
             y = 0
+        elif key == 'h':
+            x = 999
+            y = 0
         elif key == 'q':
             break
 

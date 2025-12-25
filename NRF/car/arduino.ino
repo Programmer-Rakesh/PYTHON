@@ -3,6 +3,8 @@
 
 #define CE_PIN 2    // ✅ Your pins unchanged
 #define CSN_PIN 3   // ✅ Your pins unchanged
+#define BUZZER_PIN 6 // Buzzer
+
 
 RF24 radio(CE_PIN, CSN_PIN);
 const byte address[6] = "CAR01";
@@ -19,6 +21,7 @@ const byte address[6] = "CAR01";
 #define B1_IN2 A5
 #define B2_IN1 4
 #define B2_IN2 5
+
 
 // ===== RF DATA STRUCT (MUST MATCH PYTHON <hh>) =====
 struct DataPacket {
@@ -70,10 +73,12 @@ void moveBackward() {
 
 void turnLeft() {
   // Right motors forward, left motors stop (or reverse for tighter turn)
+  //Left motors
   digitalWrite(A1_IN1, LOW);
-  digitalWrite(A1_IN2, LOW);
+  digitalWrite(A1_IN2, HIGH);
   digitalWrite(A2_IN1, LOW);
-  digitalWrite(A2_IN2, LOW);
+  digitalWrite(A2_IN2, HIGH);
+  //Right motors
   digitalWrite(B1_IN1, HIGH);
   digitalWrite(B1_IN2, LOW);
   digitalWrite(B2_IN1, HIGH);
@@ -82,19 +87,21 @@ void turnLeft() {
 
 void turnRight() {
   // Left motors forward, right motors stop (or reverse for tighter turn)
+  //Left motors
   digitalWrite(A1_IN1, HIGH);
   digitalWrite(A1_IN2, LOW);
   digitalWrite(A2_IN1, HIGH);
   digitalWrite(A2_IN2, LOW);
+  //Right motors
   digitalWrite(B1_IN1, LOW);
-  digitalWrite(B1_IN2, LOW);
+  digitalWrite(B1_IN2, HIGH);
   digitalWrite(B2_IN1, LOW);
-  digitalWrite(B2_IN2, LOW);
+  digitalWrite(B2_IN2, HIGH);
 }
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("=== RC Car Receiver Starting ===");
+  Serial.println("=== Initiating ===");
 
   // Motor pins as OUTPUT
   pinMode(A1_IN1, OUTPUT);
@@ -106,6 +113,9 @@ void setup() {
   pinMode(B2_IN1, OUTPUT);
   pinMode(B2_IN2, OUTPUT);
 
+  pinMode(BUZZER_PIN, OUTPUT);
+  digitalWrite(BUZZER_PIN, LOW);
+
   stopMotors();
 
   // ===== RF SETUP =====
@@ -114,11 +124,15 @@ void setup() {
     while (1);  // Hold program in infinite loop
   }
   
+  // In setup(), after radio.begin():
   radio.setChannel(108);
-  radio.setPayloadSize(4);  // ✅ CRITICAL: Must be 4 bytes
+  radio.setPALevel(RF24_PA_LOW);  // ADD THIS
+  radio.setDataRate(RF24_1MBPS);  // ADD THIS
+  radio.setPayloadSize(4);
+  radio.setAutoAck(false);
+
   radio.openReadingPipe(1, address);
   radio.startListening();
-
   Serial.println("✅ Receiver ready!");
   Serial.print("Payload size: ");
   Serial.print(sizeof(DataPacket));
@@ -138,6 +152,16 @@ void loop() {
 
     lastReceiveTime = millis();
     stopMotors();  // Stop first to prevent overlapping commands
+
+    // ===== BUZZER CONTROL =====
+  if (data.x == 9) {
+    Serial.println("🔊 Buzzer ON");
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(300);
+    digitalWrite(BUZZER_PIN, LOW);
+    return;  
+  }
+
 
     // ===== CONTROL LOGIC =====
     if (data.y > 50) {
@@ -169,3 +193,4 @@ void loop() {
 
   delay(10);
 }
+

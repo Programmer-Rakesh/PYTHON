@@ -42,14 +42,23 @@ void ppmISR() {
 }
 
 // ---------- PID ----------
-float kp = 2.0;
-float ki = 0.01;
-float kd = 1.2;
+float kp = 1.2;
+float ki = 0.015;
+float kd = 0.7;
 
 float rollPID = 0, pitchPID = 0;
 float rollError = 0, pitchError = 0;
 float rollI = 0, pitchI = 0;
 float lastRollError = 0, lastPitchError = 0;
+
+float yawRate;
+float yawError;
+float yawPID;
+float yawKp = 1.0;
+
+float rollAngleF = 0;
+float pitchAngleF = 0;
+unsigned long lastIMUTime = 0;
 
 // ---------- State ----------
 bool armed = false;
@@ -65,6 +74,8 @@ void writeMotors(int val) {
 
 // ---------- Setup ----------
 void setup() {
+  delay(3000);  // keep drone still
+
   Serial.begin(115200);
 
   pinMode(PPM_PIN, INPUT_PULLUP);
@@ -76,6 +87,14 @@ void setup() {
 
   Wire.begin();
   mpu.initialize();
+  mpu.setXAccelOffset(-181);
+  mpu.setYAccelOffset(-312);
+  mpu.setZAccelOffset(31468);
+
+  mpu.setXGyroOffset(109);
+  mpu.setYGyroOffset(280);
+  mpu.setZGyroOffset(322);
+
   if (!mpu.testConnection()) {
     Serial.println("MPU FAIL");
     while (1);
@@ -88,6 +107,10 @@ void setup() {
 
   writeMotors(MIN_THROTTLE);
   Serial.println("FC READY - DISARMED");
+
+  rollI = pitchI = 0;
+  rollAngleF = pitchAngleF = 0;
+  lastIMUTime = micros();
 }
 
 // ---------- Loop ----------
@@ -127,56 +150,72 @@ void loop() {
   int16_t ax, ay, az, gx, gy, gz;
   mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
-  float rollAngle  = atan2(ay, az) * 57.3;
-  float pitchAngle = atan2(-ax, az) * 57.3;
+  float rollRate  = gx / 131.0;
+  float pitchRate = gy / 131.0;
 
+  // ---------- COMPLEMENTARY FILTER ----------
+  unsigned long now = micros();
+  float dt = (now - lastIMUTime) * 1e-6;
+  lastIMUTime = now;
+
+  // Safety for first run
+  if (dt <= 0 || dt > 0.02) dt = 0.005;
+
+  // Accelerometer angles
+  float rollAcc  = atan2(ay, az) * 57.3;
+  float pitchAcc = atan2(-ax, az) * 57.3;
+
+  rollAngleF  = 0.98 * (rollAngleF  + rollRate  * dt) + 0.02 * rollAcc;
+  pitchAngleF = 0.98 * (pitchAngleF + pitchRate * dt) + 0.02 * pitchAcc;
+
+  // Use filtered angles
+  float rollAngle  = rollAngleF;
+  float pitchAngle = pitchAngleF;
+
+  // Debug print
+  static unsigned long lastPrint = 0;
+  if (millis() - lastPrint > 100) {
+    Serial.print("Roll: ");
+    Serial.print(rollAngle);
+    Serial.print("  Pitch: ");
+    Serial.println(pitchAngle);
+    lastPrint = millis();
+  }
+
+  // Targets
   float rollTarget  = map(rollIn, 1000, 2000, -20, 20);
   float pitchTarget = map(pitchIn, 1000, 2000, -20, 20);
 
   // PID
-  // rollError  = rollTarget  - rollAngle;
-  // pitchError = pitchTarget - pitchAngle;
+  rollError  = rollTarget  - rollAngle;
+  pitchError = pitchTarget - pitchAngle;
 
-  // rollI  += rollError;
-  // pitchI += pitchError;
-
-  // rollI  = constrain(rollI,  -300, 300);
-  // pitchI = constrain(pitchI, -300, 300);
-
-  // rollPID  = kp * rollError  + ki * rollI  + kd * (rollError  - lastRollError);
-  // pitchPID = kp * pitchError + ki * pitchI + kd * (pitchError - lastPitchError);
-
-  // rollPID  = constrain(rollPID,  -200, 200);
-  // pitchPID = constrain(pitchPID, -200, 200);
-
-  // lastRollError  = rollError;
-  // lastPitchError = pitchError;
-
-rollError  = rollTarget  - rollAngle;
-pitchError = pitchTarget - pitchAngle;
-
-if (throttleIn > PID_THROTTLE_CUTOFF) {
-
+  if (throttleIn > PID_THROTTLE_CUTOFF) {
   rollI  += rollError;
   pitchI += pitchError;
 
   rollI  = constrain(rollI,  -300, 300);
   pitchI = constrain(pitchI, -300, 300);
 
-  rollPID  = kp * rollError  + ki * rollI  + kd * (rollError  - lastRollError);
-  pitchPID = kp * pitchError + ki * pitchI + kd * (pitchError - lastPitchError);
-
-} else {
-  // Throttle low → no stabilization force
+  rollPID  = kp * rollError  + ki * rollI  - kd * rollRate;
+  pitchPID = kp * pitchError + ki * pitchI - kd * pitchRate;
+  } else {
   rollI = pitchI = 0;
   rollPID = pitchPID = 0;
-}
+  }
 
-rollPID  = constrain(rollPID,  -200, 200);
-pitchPID = constrain(pitchPID, -200, 200);
+  rollPID  = constrain(rollPID,  -200, 200);
+  pitchPID = constrain(pitchPID, -200, 200);
 
-lastRollError  = rollError;
-lastPitchError = pitchError;
+  lastRollError  = rollError;
+  lastPitchError = pitchError;
+
+// YAW CONTROL
+yawRate = gz / 131.0;  // gyro Z
+float yawTarget = map(yawIn, 1000, 2000, -150, 150);
+yawError = yawTarget - yawRate;
+yawPID = yawKp * yawError;
+yawPID = constrain(yawPID, -200, 200);
 
 
   // MOTOR MIX
@@ -187,9 +226,19 @@ lastPitchError = pitchError;
     int base = (throttleIn < 1050) ? IDLE_THROTTLE :
                constrain(throttleIn, IDLE_THROTTLE, MAX_THROTTLE);
 
-    m1.writeMicroseconds(constrain(base - rollPID + pitchPID, IDLE_THROTTLE, 2000));
-    m2.writeMicroseconds(constrain(base - rollPID - pitchPID, IDLE_THROTTLE, 2000));
-    m3.writeMicroseconds(constrain(base + rollPID - pitchPID, IDLE_THROTTLE, 2000));
-    m4.writeMicroseconds(constrain(base + rollPID + pitchPID, IDLE_THROTTLE, 2000));
+    // m1.writeMicroseconds(constrain(base - rollPID + pitchPID, IDLE_THROTTLE, 2000));
+    // m2.writeMicroseconds(constrain(base - rollPID - pitchPID, IDLE_THROTTLE, 2000));
+    // m3.writeMicroseconds(constrain(base + rollPID - pitchPID, IDLE_THROTTLE, 2000));
+    // m4.writeMicroseconds(constrain(base + rollPID + pitchPID, IDLE_THROTTLE, 2000));
+
+    int m1_out = base - rollPID + pitchPID - yawPID;  // Front Right
+    int m2_out = base - rollPID - pitchPID + yawPID;  // Rear Right
+    int m3_out = base + rollPID - pitchPID - yawPID;  // Rear Left
+    int m4_out = base + rollPID + pitchPID + yawPID;  // Front Left
+
+    m1.writeMicroseconds(constrain(m1_out, IDLE_THROTTLE, 2000));
+    m2.writeMicroseconds(constrain(m2_out, IDLE_THROTTLE, 2000));
+    m3.writeMicroseconds(constrain(m3_out, IDLE_THROTTLE, 2000));
+    m4.writeMicroseconds(constrain(m4_out, IDLE_THROTTLE, 2000));
   }
 }

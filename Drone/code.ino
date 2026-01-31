@@ -13,6 +13,8 @@
 #define MIN_THROTTLE 1000
 #define IDLE_THROTTLE 1020
 #define MAX_THROTTLE 1800
+#define PID_THROTTLE_CUTOFF 1080
+
 
 MPU6050 mpu;
 Servo m1, m2, m3, m4;
@@ -40,9 +42,9 @@ void ppmISR() {
 }
 
 // ---------- PID ----------
-float kp = 3.5;
-float ki = 0.02;
-float kd = 1.8;
+float kp = 2.0;
+float ki = 0.01;
+float kd = 1.2;
 
 float rollPID = 0, pitchPID = 0;
 float rollError = 0, pitchError = 0;
@@ -132,8 +134,28 @@ void loop() {
   float pitchTarget = map(pitchIn, 1000, 2000, -20, 20);
 
   // PID
-  rollError  = rollTarget  - rollAngle;
-  pitchError = pitchTarget - pitchAngle;
+  // rollError  = rollTarget  - rollAngle;
+  // pitchError = pitchTarget - pitchAngle;
+
+  // rollI  += rollError;
+  // pitchI += pitchError;
+
+  // rollI  = constrain(rollI,  -300, 300);
+  // pitchI = constrain(pitchI, -300, 300);
+
+  // rollPID  = kp * rollError  + ki * rollI  + kd * (rollError  - lastRollError);
+  // pitchPID = kp * pitchError + ki * pitchI + kd * (pitchError - lastPitchError);
+
+  // rollPID  = constrain(rollPID,  -200, 200);
+  // pitchPID = constrain(pitchPID, -200, 200);
+
+  // lastRollError  = rollError;
+  // lastPitchError = pitchError;
+
+rollError  = rollTarget  - rollAngle;
+pitchError = pitchTarget - pitchAngle;
+
+if (throttleIn > PID_THROTTLE_CUTOFF) {
 
   rollI  += rollError;
   pitchI += pitchError;
@@ -144,11 +166,18 @@ void loop() {
   rollPID  = kp * rollError  + ki * rollI  + kd * (rollError  - lastRollError);
   pitchPID = kp * pitchError + ki * pitchI + kd * (pitchError - lastPitchError);
 
-  rollPID  = constrain(rollPID,  -200, 200);
-  pitchPID = constrain(pitchPID, -200, 200);
+} else {
+  // Throttle low → no stabilization force
+  rollI = pitchI = 0;
+  rollPID = pitchPID = 0;
+}
 
-  lastRollError  = rollError;
-  lastPitchError = pitchError;
+rollPID  = constrain(rollPID,  -200, 200);
+pitchPID = constrain(pitchPID, -200, 200);
+
+lastRollError  = rollError;
+lastPitchError = pitchError;
+
 
   // MOTOR MIX
   if (!armed) {

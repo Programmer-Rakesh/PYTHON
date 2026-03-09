@@ -1,0 +1,12 @@
+# Install Python libraries
+sudo apt-get update
+sudo apt-get install python3-pip
+pip3 install pyserial pandas scikit-learn joblib
+
+# Enable UART for ESP32 communication
+sudo raspi-config
+# Navigate to: Interface Options → Serial Port → 
+#   "login shell over serial" → NO
+#   "serial port hardware" → YES
+# Reboot
+sudo reboot

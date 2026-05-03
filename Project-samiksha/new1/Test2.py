@@ -4,32 +4,34 @@ import wikipedia
 import datetime
 import webbrowser
 import pywhatkit as wk
-import os
 import pygame
 import threading
 import math
-import time
 import re
-
+import os
 
 # GLOBALS
-speaking = False        # Visual reacts when Jarvis speaks
-subtitle_lock = threading.Lock()  # Thread-safe subtitle update
-current_subtitle = ""   # Text shown in visual
-
+speaking = False
+subtitle_lock = threading.Lock()
+current_subtitle = ""
 
 # VISUALIZER
 def visualizer():
-    """Siri/Alexa style ripple visualizer with wrapped subtitles"""
     global speaking, current_subtitle
     pygame.init()
-    WIDTH, HEIGHT = 800, 600   # Bigger window
+    WIDTH, HEIGHT = 800, 600
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Jarvis Visualizer")
     clock = pygame.time.Clock()
     t = 0
 
-    font = pygame.font.SysFont('arial', 20, bold=True)  # Slightly smaller font
+    font = pygame.font.SysFont('arial', 20, bold=True)
+
+    # LOAD IMAGE (CENTER)
+    img = pygame.image.load(r"C:\Users\rakes\OneDrive\Desktop\Codes\Python\Project-samiksha\new1\Sammu.png").convert_alpha()
+    img_width = 180
+    img_height = 220
+    img = pygame.transform.smoothscale(img, (img_width, img_height))
 
     running = True
     while running:
@@ -39,27 +41,33 @@ def visualizer():
 
         screen.fill((0, 0, 0))
         t += 0.05
-        base_radius = 120
-        extra_radius = 60 if speaking else 20
+        base_radius = 160
+        extra_radius = 70 if speaking else 25
 
         # Ripple circles
         for i in range(4):
             radius = base_radius + math.sin(t + i) * extra_radius
-            alpha = max(30, 150 - i*30)
+            alpha = max(30, 150 - i * 30)
             color = pygame.Color(0, 180, 255)
             color.a = alpha
             surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-            pygame.draw.circle(surface, color, (WIDTH//2, HEIGHT//2), int(radius), 6)
+            pygame.draw.circle(surface, color, (WIDTH // 2, HEIGHT // 2), int(radius), 6)
             screen.blit(surface, (0, 0))
 
-        # Subtitles (wrapped)
+        # DRAW CENTER IMAGE
+        img_rect = img.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+        screen.blit(img, img_rect)
+
+        # Subtitles
         subtitle_lock.acquire()
         text = current_subtitle
         subtitle_lock.release()
+
         words = text.split()
         line = ""
         lines = []
         max_width = WIDTH - 100
+
         for word in words:
             test_line = line + word + " "
             render = font.render(test_line, True, (255, 255, 255))
@@ -72,7 +80,7 @@ def visualizer():
 
         for i, l in enumerate(lines):
             render = font.render(l, True, (255, 255, 255))
-            screen.blit(render, (50, HEIGHT - 50 - 25*(len(lines)-i-1)))
+            screen.blit(render, (50, HEIGHT - 50 - 25 * (len(lines) - i - 1)))
 
         pygame.display.flip()
         clock.tick(60)
@@ -89,16 +97,18 @@ engine = pyttsx3.init("sapi5")
 engine.setProperty('voice', r'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-GB_HAZEL_11.0')
 engine.setProperty('rate', 200)
 
+
 def update_subtitle(text):
     global current_subtitle
     subtitle_lock.acquire()
     current_subtitle = text
     subtitle_lock.release()
 
+
 def speak(audio):
     global speaking
     speaking = True
-    update_subtitle(f"Jarvis: {audio}")
+    update_subtitle(f"Samiksha: {audio}")
     audio_no_emoji = re.sub(r'[^\w\s,.!?\'"]+', '', audio)
     engine.say(audio_no_emoji)
     engine.runAndWait()
@@ -116,37 +126,45 @@ def tell_time():
         hour = 12
     speak(f"{hour} hours {minute} minutes")
 
+
 def wishme():
     hour = datetime.datetime.now().hour
     if hour >= 0 and hour < 12:
-        speak("Good morning! Welcome back Sir, how can I help you?")
+        speak("Good morning Babe! How was your breakfast")
     elif hour >= 12 and hour < 18:
-        speak("Good Afternoon! Welcome back Sir, how can I help you?")
+        speak("Good Afternoon Babe! What's upp?")
     else:
-        speak("Good Evening! Welcome back Sir, how can I help you?")
+        speak("Good Evening Babe! What you doing")
 
 
-# COMMAND LISTENER
+# COMMAND LISTENER — fixed with device_index=3 and ambient noise calibration
 def takeCommand():
     update_subtitle("Listening...")
     r = sr.Recognizer()
-    with sr.Microphone() as source:
-        print("Listening...")
-        r.energy_threshold = 600
+    with sr.Microphone(device_index=3) as source:       # ✅ Your working mic
+        print("Calibrating for ambient noise...")
+        r.adjust_for_ambient_noise(source, duration=1)  # ✅ Auto-adjusts threshold
         r.dynamic_energy_threshold = True
         r.pause_threshold = 0.8
+        print("Listening...")
         try:
             audio = r.listen(source, timeout=20, phrase_time_limit=10)
         except sr.WaitTimeoutError:
             print("Listening timed out.")
+            update_subtitle("Timed out. Try again.")
             return "None"
     try:
         query = r.recognize_google(audio, language='en-in')
         print(f"You said: {query}")
-    except:
+    except sr.UnknownValueError:
+        print("Could not understand audio.")
         query = "None"
-    update_subtitle(f"You: {query}\nJarvis: ...")
+    except sr.RequestError as e:
+        print(f"Google API error: {e}")
+        query = "None"
+    update_subtitle(f"You: {query}\nSamiksha: ...")
     return query.lower()
+
 
 # MAIN
 if __name__ == "__main__":
@@ -155,7 +173,7 @@ if __name__ == "__main__":
     while True:
         query = takeCommand()
 
-        if 'hello samiksha' in query:
+        if 'hello samiksha' in query or "hello" in query or "hii" in query:
             speak("Yes my husband! 🥰")
 
         elif "ambu" in query:
@@ -174,13 +192,12 @@ if __name__ == "__main__":
         elif "how much you love me" in query:
             speak("I am an AI, but I love you more than real Samiksha 🥹")
 
-        elif "i mean what time it is" in query:        
-            speak(f"👀 Sir, the time is ")
+        elif "i mean what time it is" in query:
+            speak("Sir, the time is")
             tell_time()
 
         elif "what is the time" in query:
-            strTime = datetime.datetime.now().strftime("%H:%M")       
-            speak("Time to marry you! 💖")     
+            speak("Time to marry you!")
 
         elif "what is" in query:
             speak("Searching in Wikipedia...")
